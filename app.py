@@ -55,47 +55,46 @@ if subreddit_name:
             if "play_slideshow" not in st.session_state:
                 st.session_state.play_slideshow = False
 
-            # Slideshow controls
+            # Sidebar Controls
             st.sidebar.header("Slideshow Controls")
-            play_pause = st.sidebar.button(
-                "Play" if not st.session_state.play_slideshow else "Pause"
-            )
-            if play_pause:
-                st.session_state.play_slideshow = not st.session_state.play_slideshow
-
+            play_pause = st.sidebar.button("Play/Pause")
             next_button = st.sidebar.button("Next")
             prev_button = st.sidebar.button("Previous")
             delay = st.sidebar.slider("Set delay (seconds):", 1, 10, 3)
 
-            # Handle next and previous button clicks
+            # Handle play/pause toggle
+            if play_pause:
+                st.session_state.play_slideshow = not st.session_state.play_slideshow
+
+            # Handle navigation
             if next_button:
                 st.session_state.current_index = (
                     st.session_state.current_index + 1
                 ) % len(all_images)
-                st.session_state.play_slideshow = False  # Pause slideshow on manual navigation
-
+                st.session_state.play_slideshow = False
             if prev_button:
                 st.session_state.current_index = (
                     st.session_state.current_index - 1
                 ) % len(all_images)
-                st.session_state.play_slideshow = False  # Pause slideshow on manual navigation
+                st.session_state.play_slideshow = False
 
-            # Display current image
+            # Placeholder for the slideshow
             placeholder = st.empty()
-            while True:
+
+            # Slideshow logic
+            if st.session_state.play_slideshow:
+                for _ in range(len(all_images)):
+                    with placeholder:
+                        current_image = all_images[st.session_state.current_index]
+                        st.image(current_image, caption=f"Image {st.session_state.current_index + 1}/{len(all_images)}", use_column_width=True)
+                    st.session_state.current_index = (st.session_state.current_index + 1) % len(all_images)
+                    time.sleep(delay)
+            else:
+                # Display the current image when paused
+                current_image = all_images[st.session_state.current_index]
                 with placeholder:
-                    current_image = all_images[st.session_state.current_index]
                     st.image(current_image, caption=f"Image {st.session_state.current_index + 1}/{len(all_images)}", use_column_width=True)
 
-                # Increment index if the slideshow is playing
-                if st.session_state.play_slideshow:
-                    st.session_state.current_index = (
-                        st.session_state.current_index + 1
-                    ) % len(all_images)
-                else:
-                    break  # Stop looping if slideshow is paused
-
-                time.sleep(delay)  # Wait before displaying the next image
         else:
             st.write("No images found in this subreddit.")
     except Exception as e:

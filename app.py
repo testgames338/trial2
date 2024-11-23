@@ -1,7 +1,7 @@
 import praw
 import streamlit as st
-import time
 import random
+import time
 
 # Set up Reddit API
 reddit = praw.Reddit(
@@ -23,9 +23,11 @@ def get_gallery_images(post):
     return image_urls
 
 # Streamlit app
-st.title("Reddit Image Slideshow")
+st.title("Reddit Image Slideshow with Enhancements")
 
+# Input subreddit name
 subreddit_name = st.text_input("Enter subreddit name:", value="pics")  # Default to 'pics'
+
 if subreddit_name:
     try:
         # Fetch the subreddit
@@ -47,12 +49,53 @@ if subreddit_name:
             # Randomize the image order
             random.shuffle(all_images)
 
-            # Create a slideshow
+            # Initialize session state variables
+            if "current_index" not in st.session_state:
+                st.session_state.current_index = 0
+            if "play_slideshow" not in st.session_state:
+                st.session_state.play_slideshow = False
+
+            # Slideshow controls
+            st.sidebar.header("Slideshow Controls")
+            play_pause = st.sidebar.button(
+                "Play" if not st.session_state.play_slideshow else "Pause"
+            )
+            if play_pause:
+                st.session_state.play_slideshow = not st.session_state.play_slideshow
+
+            next_button = st.sidebar.button("Next")
+            prev_button = st.sidebar.button("Previous")
+            delay = st.sidebar.slider("Set delay (seconds):", 1, 10, 3)
+
+            # Handle next and previous button clicks
+            if next_button:
+                st.session_state.current_index = (
+                    st.session_state.current_index + 1
+                ) % len(all_images)
+                st.session_state.play_slideshow = False  # Pause slideshow on manual navigation
+
+            if prev_button:
+                st.session_state.current_index = (
+                    st.session_state.current_index - 1
+                ) % len(all_images)
+                st.session_state.play_slideshow = False  # Pause slideshow on manual navigation
+
+            # Display current image
             placeholder = st.empty()
-            for image_url in all_images:
+            while True:
                 with placeholder:
-                    st.image(image_url, caption="Slideshow Image", use_column_width=True)
-                time.sleep(3)  # Wait 3 seconds before showing the next image
+                    current_image = all_images[st.session_state.current_index]
+                    st.image(current_image, caption=f"Image {st.session_state.current_index + 1}/{len(all_images)}", use_column_width=True)
+
+                # Increment index if the slideshow is playing
+                if st.session_state.play_slideshow:
+                    st.session_state.current_index = (
+                        st.session_state.current_index + 1
+                    ) % len(all_images)
+                else:
+                    break  # Stop looping if slideshow is paused
+
+                time.sleep(delay)  # Wait before displaying the next image
         else:
             st.write("No images found in this subreddit.")
     except Exception as e:

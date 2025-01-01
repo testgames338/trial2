@@ -54,7 +54,7 @@ if subreddit_names:
         if all_images:
             # Randomize the image order
            for _ in range(3):  # Shuffle the images three times for more randomness
-                random.shuffle(all_images)
+               random.shuffle(all_images)
 
             # Initialize session state variables
             if "current_index" not in st.session_state:

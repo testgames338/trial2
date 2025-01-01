@@ -23,27 +23,33 @@ def get_gallery_images(post):
     return image_urls
 
 # Streamlit app
-st.title("Reddit Image Slideshow with Enhancements")
+st.title("Reddit Image Slideshow (Multiple Subreddits)")
 
-# Input subreddit name
-subreddit_name = st.text_input("Enter subreddit name:", value="pics")  # Default to 'pics'
+# Input subreddit names
+subreddit_names = st.text_input(
+    "Enter subreddit names (separated by commas):", value="pics, wallpapers"
+)
 
-if subreddit_name:
+if subreddit_names:
     try:
-        # Fetch the subreddit
-        subreddit = reddit.subreddit(subreddit_name)
-        st.write(f"Showing posts from: r/{subreddit_name}")
+        # Parse the subreddit names
+        subreddit_list = [sub.strip() for sub in subreddit_names.split(",") if sub.strip()]
 
-        # Collect all image URLs from the top 10 posts
+        # Collect images from all specified subreddits
         all_images = []
-        for post in subreddit.hot(limit=10):  # Adjust limit as needed
-            # Extract gallery images
-            gallery_images = get_gallery_images(post)
-            if gallery_images:
-                all_images.extend(gallery_images)
-            # Handle single image posts
-            elif post.url.endswith(('.jpg', '.jpeg', '.png', '.gif')):
-                all_images.append(post.url)
+        for subreddit_name in subreddit_list:
+            try:
+                subreddit = reddit.subreddit(subreddit_name)
+                for post in subreddit.hot(limit=20):  # Adjust limit as needed
+                    # Extract gallery images
+                    gallery_images = get_gallery_images(post)
+                    if gallery_images:
+                        all_images.extend(gallery_images)
+                    # Handle single image posts
+                    elif post.url.endswith(('.jpg', '.jpeg', '.png', '.gif')):
+                        all_images.append(post.url)
+            except Exception as e:
+                st.error(f"Error fetching subreddit '{subreddit_name}': {e}")
 
         if all_images:
             # Randomize the image order
@@ -86,16 +92,26 @@ if subreddit_name:
                 for _ in range(len(all_images)):
                     with placeholder:
                         current_image = all_images[st.session_state.current_index]
-                        st.image(current_image, caption=f"Image {st.session_state.current_index + 1}/{len(all_images)}", use_column_width=True)
-                    st.session_state.current_index = (st.session_state.current_index + 1) % len(all_images)
+                        st.image(
+                            current_image,
+                            caption=f"Image {st.session_state.current_index + 1}/{len(all_images)}",
+                            use_column_width=True,
+                        )
+                    st.session_state.current_index = (
+                        st.session_state.current_index + 1
+                    ) % len(all_images)
                     time.sleep(delay)
             else:
                 # Display the current image when paused
                 current_image = all_images[st.session_state.current_index]
                 with placeholder:
-                    st.image(current_image, caption=f"Image {st.session_state.current_index + 1}/{len(all_images)}", use_column_width=True)
+                    st.image(
+                        current_image,
+                        caption=f"Image {st.session_state.current_index + 1}/{len(all_images)}",
+                        use_column_width=True,
+                    )
 
         else:
-            st.write("No images found in this subreddit.")
+            st.write("No images found in the specified subreddits.")
     except Exception as e:
-        st.error(f"Error fetching subreddit: {e}")
+        st.error(f"Error: {e}")
